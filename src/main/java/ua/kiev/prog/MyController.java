@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,16 +29,21 @@ public class MyController {
     public String onAddPhoto(Model model, @RequestParam MultipartFile photo) {
         if (photo.isEmpty())
             throw new PhotoErrorException();
-
         try {
             long id = System.currentTimeMillis();
             photos.put(id, photo.getBytes());
-
             model.addAttribute("photo_id", id);
             return "result";
         } catch (IOException e) {
             throw new PhotoErrorException();
         }
+    }
+
+    @RequestMapping(value = "/showAll", method = RequestMethod.POST)
+    public String show2(Model model) {
+        ArrayList<Long> ar = new ArrayList<Long>(photos.keySet());
+        model.addAttribute("ar", ar);
+        return "test2";
     }
 
     @RequestMapping("/photo/{photo_id}")
@@ -58,14 +64,22 @@ public class MyController {
             return "index";
     }
 
+    @RequestMapping(value = "/delete", method = RequestMethod.POST)
+    public String delete2(Model model, @RequestParam("check[]") String [] id) {
+        for(int i = 0; i < id.length; i++){
+            photos.remove(new Long(id[i]));
+        }
+        ArrayList<Long> ar = new ArrayList<Long>(photos.keySet());
+        model.addAttribute("ar", ar);
+        return "test2";
+    }
+
     private ResponseEntity<byte[]> photoById(long id) {
         byte[] bytes = photos.get(id);
         if (bytes == null)
             throw new PhotoNotFoundException();
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.IMAGE_PNG);
-
         return new ResponseEntity<byte[]>(bytes, headers, HttpStatus.OK);
     }
 }
